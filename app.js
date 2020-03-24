@@ -31,7 +31,6 @@ const
 
 // Sets server port and logs message on success
 app.listen(process.env.PORT || 1337, () => console.log('webhook is listening'));
-
 // Accepts POST requests at /webhook endpoint
 app.post('/webhook', (req, res) => {  
 
@@ -100,16 +99,32 @@ app.get('/webhook', (req, res) => {
   }
 });
 
-function handleMessage(sender_psid, received_message) {
+async function getProfile(sender_psid) {
+  await request("https://graph.facebook.com/" + sender_psid + "?fields=first_name,last_name,profile_pic&access_token=" + PAGE_ACCESS_TOKEN,
+    (err, res, body) => {
+      if (!err) {
+        name = JSON.parse(body).first_name + " " + JSON.parse(body).last_name;
+        console.log(name)
+        console.log(body)
+      } else {
+        console.error("Unable to get profile : " + err);
+      }
+    });
+  return {
+    'text': 'Hello, ' + name + '!'
+  }
+}
+
+async function handleMessage(sender_psid, received_message) {
   let response;
   
   // Checks if the message contains text
-  if (received_message.text) {    
+  if (received_message.text) {
     // Create the payload for a basic text message, which
     // will be added to the body of our request to the Send API
-    response = {
-      "text": `You sent the message: "${received_message.text}". Now send me an attachment!`
-    }
+    
+    response = await getProfile(sender_psid);
+    console.log(response);
   } else if (received_message.attachments) {
     // Get the URL of the message attachment
     let attachment_url = received_message.attachments[0].payload.url;
