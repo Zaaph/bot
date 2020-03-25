@@ -99,33 +99,87 @@ app.get('/webhook', (req, res) => {
   }
 });
 
-async function getProfile(sender_psid) {
-  await request("https://graph.facebook.com/" + sender_psid + "?fields=first_name,last_name,profile_pic&access_token=" + PAGE_ACCESS_TOKEN,
+function getProfile(sender_psid) {
+  const response = {
+    "attachment": {
+      "type": "template",
+      "payload": {
+        "template_type": "generic",
+        "elements": [
+          {
+            "title": "Do you prefer cats or dogs?",
+            "image_url": "https://d17fnq9dkz9hgj.cloudfront.net/breed-uploads/2018/08/Bernese-Mountain-Dog_01.jpg?bust=1538075039&width=290",
+            "subtitle": "Tap a button to answer.",
+            "buttons": [
+              {
+                "type": "postback",
+                "title": "Dogs!",
+                "payload": "dog",
+              }
+            ],
+          },
+          {
+            "title": "Do you prefer cats or dogs?",
+            "image_url": "https://static.lexpress.fr/medias_10521/w_2048,h_890,c_crop,x_0,y_372/w_480,h_270,c_fill,g_north/v1558088348/grumpy-cat-2_5387055.jpg",
+            "subtitle": "Tap a button to answer.",
+            "buttons": [
+              {
+                "type": "postback",
+                "title": "Cats!",
+                "payload": "cat",
+              }
+            ],
+          }
+        ]
+      }
+    }
+  }
+
+  request("https://graph.facebook.com/" + sender_psid + "?fields=first_name,last_name,profile_pic&access_token=" + PAGE_ACCESS_TOKEN,
     (err, res, body) => {
       if (!err) {
-        name = JSON.parse(body).first_name + " " + JSON.parse(body).last_name;
+        let name = JSON.parse(body).first_name;
         console.log(name)
+        console.log(PAGE_ACCESS_TOKEN)
         console.log(body)
+        callSendAPI(sender_psid, {'text': 'Hello, ' + name + '! :p'});
+        callSendAPI(sender_psid, response);
       } else {
         console.error("Unable to get profile : " + err);
       }
     });
-  return {
-    'text': 'Hello, ' + name + '!'
-  }
 }
 
 async function handleMessage(sender_psid, received_message) {
   let response;
+
+  const request_body = {
+    "recipient":{
+      "id": sender_psid
+    },
+  "sender_action":"typing_on"
+  }
+
+  request({
+    "uri": "https://graph.facebook.com/v2.6/me/messages",
+    "qs": { "access_token": PAGE_ACCESS_TOKEN },
+    "method": "POST",
+    "json": request_body
+  }, (err, res, body) => {
+    if (!err) {
+      console.log('typing_on')
+    } else {
+      console.error("Unable to type: " + err);
+    }
+  });
   
   // Checks if the message contains text
   if (received_message.text) {
     // Create the payload for a basic text message, which
     // will be added to the body of our request to the Send API
-    
-    response = await getProfile(sender_psid);
-    console.log(response);
+    getProfile(sender_psid);
   } else if (received_message.attachments) {
+    console.log('else if')
     // Get the URL of the message attachment
     let attachment_url = received_message.attachments[0].payload.url;
     response = {
@@ -153,10 +207,10 @@ async function handleMessage(sender_psid, received_message) {
         }
       }
     }
+    callSendAPI(sender_psid, response);
   } 
   
-  // Send the response message
-  callSendAPI(sender_psid, response);    
+  // Send the response message    
 }
 
 function handlePostback(sender_psid, received_postback) {
@@ -166,10 +220,10 @@ function handlePostback(sender_psid, received_postback) {
   let payload = received_postback.payload;
 
   // Set the response based on the postback payload
-  if (payload === 'yes') {
-    response = { "text": "Thanks!" }
-  } else if (payload === 'no') {
-    response = { "text": "Oops, try sending another image." }
+  if (payload === 'cat') {
+    response = { "text": "Alright, let's find a cat that needs you!" }
+  } else if (payload === 'dog') {
+    response = { "text": "Alright, let's find a dog that needs you!" }
   }
   // Send the message to acknowledge the postback
   callSendAPI(sender_psid, response);
