@@ -21,7 +21,7 @@
  */
 
 'use strict';
-const PAGE_ACCESS_TOKEN = 'EAADgzAuiKw8BAFWUx11QE59tDLT7QDdTIHPU4x4pnMLGWUIFDSAo0uDyyBsYvopeAqPb17ZBbqOqvWsUUxuKKRBoMKj2eALJYgQAoAJAPvhA5PViKql8S8DChO5Du6x5bDWIHJIZBnE4xvPrjLAZBP6EhxUhlX2bqQIyWSqqgZDZD';
+const PAGE_ACCESS_TOKEN = '';
 // Imports dependencies and set up http server
 const 
   request = require('request'),
@@ -75,7 +75,7 @@ app.post('/webhook', (req, res) => {
 app.get('/webhook', (req, res) => {
   
   /** UPDATE YOUR VERIFY TOKEN **/
-  const VERIFY_TOKEN = "tropbien";
+  const VERIFY_TOKEN = "";
   
   // Parse params from the webhook verification request
   let mode = req.query['hub.mode'];
@@ -139,9 +139,6 @@ function getProfile(sender_psid) {
     (err, res, body) => {
       if (!err) {
         let name = JSON.parse(body).first_name;
-        console.log(name)
-        console.log(PAGE_ACCESS_TOKEN)
-        console.log(body)
         callSendAPI(sender_psid, {'text': 'Hello, ' + name + '! :p'});
         callSendAPI(sender_psid, response);
       } else {
